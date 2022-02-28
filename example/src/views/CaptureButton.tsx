@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { StyleSheet, View, ViewProps } from 'react-native';
 import {
   PanGestureHandler,
@@ -19,7 +19,7 @@ import Reanimated, {
   useSharedValue,
   withRepeat,
 } from 'react-native-reanimated';
-import type { Camera, PhotoFile, TakePhotoOptions, TakeSnapshotOptions, VideoFile } from 'react-native-vision-camera';
+import type { Camera, PhotoFile, VideoFile } from 'react-native-vision-camera';
 import { CAPTURE_BUTTON_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH } from './../Constants';
 
 const PAN_GESTURE_HANDLER_FAIL_X = [-SCREEN_WIDTH, SCREEN_WIDTH];
@@ -39,8 +39,6 @@ interface Props extends ViewProps {
   flash: 'off' | 'on';
 
   enabled: boolean;
-
-  setIsPressingButton: (isPressingButton: boolean) => void;
 }
 
 const _CaptureButton: React.FC<Props> = ({
@@ -51,37 +49,13 @@ const _CaptureButton: React.FC<Props> = ({
   cameraZoom,
   flash,
   enabled,
-  setIsPressingButton,
   style,
   ...props
 }): React.ReactElement => {
   const pressDownDate = useRef<Date | undefined>(undefined);
   const isRecording = useRef(false);
   const recordingProgress = useSharedValue(0);
-  const takePhotoOptions = useMemo<TakePhotoOptions & TakeSnapshotOptions>(
-    () => ({
-      photoCodec: 'jpeg',
-      qualityPrioritization: 'speed',
-      flash: flash,
-      quality: 90,
-      skipMetadata: true,
-    }),
-    [flash],
-  );
   const isPressingButton = useSharedValue(false);
-
-  //#region Camera Capture
-  const takePhoto = useCallback(async () => {
-    try {
-      if (camera.current == null) throw new Error('Camera ref is null!');
-
-      console.log('Taking photo...');
-      const photo = await camera.current.takePhoto(takePhotoOptions);
-      onMediaCaptured(photo, 'photo');
-    } catch (e) {
-      console.error('Failed to take photo!', e);
-    }
-  }, [camera, onMediaCaptured, takePhotoOptions]);
 
   const onStoppedRecording = useCallback(() => {
     isRecording.current = false;
@@ -152,7 +126,6 @@ const _CaptureButton: React.FC<Props> = ({
               startRecording();
             }
           }, START_RECORDING_DELAY);
-          setIsPressingButton(true);
           return;
         }
         case State.END:
@@ -160,21 +133,10 @@ const _CaptureButton: React.FC<Props> = ({
         case State.CANCELLED: {
           // exit "recording mode"
           try {
-            if (pressDownDate.current == null) throw new Error('PressDownDate ref .current was null!');
-            const now = new Date();
-            const diff = now.getTime() - pressDownDate.current.getTime();
-            pressDownDate.current = undefined;
-            if (diff < START_RECORDING_DELAY) {
-              // user has released the button within 200ms, so his intention is to take a single picture.
-              await takePhoto();
-            } else {
-              // user has held the button for more than 200ms, so he has been recording this entire time.
-              await stopRecording();
-            }
+            await stopRecording();
           } finally {
             setTimeout(() => {
               isPressingButton.value = false;
-              setIsPressingButton(false);
             }, 500);
           }
           return;
@@ -183,7 +145,7 @@ const _CaptureButton: React.FC<Props> = ({
           break;
       }
     },
-    [isPressingButton, recordingProgress, setIsPressingButton, startRecording, stopRecording, takePhoto],
+    [isPressingButton, recordingProgress, startRecording, stopRecording],
   );
   //#endregion
   //#region Pan handler

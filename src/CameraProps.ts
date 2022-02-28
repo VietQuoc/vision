@@ -1,4 +1,4 @@
-import type { ViewProps } from 'react-native';
+import type { StyleProp, ViewProps } from 'react-native';
 import type { CameraDevice, CameraDeviceFormat, ColorSpace, VideoStabilizationMode } from './CameraDevice';
 import type { CameraRuntimeError } from './CameraError';
 import type { CameraPreset } from './CameraPreset';
@@ -209,4 +209,12 @@ export interface CameraProps extends ViewProps {
    */
   frameProcessorFps?: number | 'auto';
   //#endregion
+
+  maxDurations: 15 | 30 | 60;
+  minDurations: number;
+  speed?: number;
+  processBarContainerStyle?: StyleProp<ViewProps>;
+  processBarAnimatedStyle?: StyleProp<ViewProps>;
+  captureButtonPaddingBottom?: number;
+  captureButtonSizeN?: number;
 }

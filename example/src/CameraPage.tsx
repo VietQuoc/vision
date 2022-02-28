@@ -2,27 +2,16 @@ import * as React from 'react';
 import { useRef, useState, useMemo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent, TapGestureHandler } from 'react-native-gesture-handler';
-import {
-  CameraDeviceFormat,
-  CameraRuntimeError,
-  FrameProcessorPerformanceSuggestion,
-  PhotoFile,
-  sortFormats,
-  useCameraDevices,
-  useFrameProcessor,
-  VideoFile,
-} from 'react-native-vision-camera';
+import { CameraDeviceFormat, CameraRuntimeError, PhotoFile, sortFormats, useCameraDevices, VideoFile } from 'react-native-vision-camera';
 import { Camera, frameRateIncluded } from 'react-native-vision-camera';
-import { CONTENT_SPACING, MAX_ZOOM_FACTOR, SAFE_AREA_PADDING } from './Constants';
+import { CONTENT_SPACING, MAX_ZOOM_FACTOR, SAFE_AREA_PADDING, CAPTURE_BUTTON_SIZE } from './Constants';
 import Reanimated, { Extrapolate, interpolate, useAnimatedGestureHandler, useAnimatedProps, useSharedValue } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { useIsForeground } from './hooks/useIsForeground';
 import { StatusBarBlurBackground } from './views/StatusBarBlurBackground';
-import { CaptureButton } from './views/CaptureButton';
 import { PressableOpacity } from 'react-native-pressable-opacity';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import IonIcon from 'react-native-vector-icons/Ionicons';
-import { examplePlugin } from './frame-processors/ExamplePlugin';
 import type { Routes } from './Routes';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useIsFocused } from '@react-navigation/core';
@@ -41,7 +30,6 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
   const [isCameraInitialized, setIsCameraInitialized] = useState(false);
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
   const zoom = useSharedValue(0);
-  const isPressingButton = useSharedValue(false);
 
   // check if camera page is active
   const isFocussed = useIsFocused();
@@ -121,13 +109,6 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
   }, [maxZoom, minZoom, zoom]);
   //#endregion
 
-  //#region Callbacks
-  const setIsPressingButton = useCallback(
-    (_isPressingButton: boolean) => {
-      isPressingButton.value = _isPressingButton;
-    },
-    [isPressingButton],
-  );
   // Camera callbacks
   const onError = useCallback((error: CameraRuntimeError) => {
     console.error(error);
@@ -197,16 +178,6 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
     console.log('re-rendering camera page without active camera');
   }
 
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    const values = examplePlugin(frame);
-    console.log(`Return Values: ${JSON.stringify(values)}`);
-  }, []);
-
-  const onFrameProcessorSuggestionAvailable = useCallback((suggestion: FrameProcessorPerformanceSuggestion) => {
-    console.log(`Suggestion available! ${suggestion.type}: Can do ${suggestion.suggestedFrameProcessorFps} FPS`);
-  }, []);
-
   return (
     <View style={styles.container}>
       {device != null && (
@@ -226,31 +197,19 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
                 onError={onError}
                 enableZoomGesture={false}
                 animatedProps={cameraAnimatedProps}
-                photo={true}
                 video={true}
                 audio={hasMicrophonePermission}
-                frameProcessor={device.supportsParallelVideoProcessing ? frameProcessor : undefined}
                 orientation="portrait"
-                frameProcessorFps={1}
-                onFrameProcessorPerformanceSuggestionAvailable={onFrameProcessorSuggestionAvailable}
+                maxDurations={15}
+                minDurations={3}
+                speed={2}
+                captureButtonPaddingBottom={SAFE_AREA_PADDING.paddingBottom}
+                captureButtonSizeN={CAPTURE_BUTTON_SIZE}
               />
             </TapGestureHandler>
           </Reanimated.View>
         </PinchGestureHandler>
       )}
-
-      <CaptureButton
-        style={styles.captureButton}
-        camera={camera}
-        onMediaCaptured={onMediaCaptured}
-        cameraZoom={zoom}
-        minZoom={minZoom}
-        maxZoom={maxZoom}
-        flash={supportsFlash ? flash : 'off'}
-        enabled={isCameraInitialized && isActive}
-        setIsPressingButton={setIsPressingButton}
-      />
-
       <StatusBarBlurBackground />
 
       <View style={styles.rightButtonRow}>
@@ -292,11 +251,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
-  captureButton: {
-    position: 'absolute',
-    alignSelf: 'center',
-    bottom: SAFE_AREA_PADDING.paddingBottom,
-  },
   button: {
     marginBottom: CONTENT_SPACING,
     width: BUTTON_SIZE,
@@ -309,7 +263,7 @@ const styles = StyleSheet.create({
   rightButtonRow: {
     position: 'absolute',
     right: SAFE_AREA_PADDING.paddingRight,
-    top: SAFE_AREA_PADDING.paddingTop,
+    top: SAFE_AREA_PADDING.paddingTop + 20,
   },
   text: {
     color: 'white',

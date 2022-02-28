@@ -123,10 +123,14 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'white',
+    width: 150,
+    height: 300,
+    bottom: 100,
+    left: 20,
   },
   closeButton: {
     position: 'absolute',

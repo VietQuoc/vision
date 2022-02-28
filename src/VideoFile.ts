@@ -52,4 +52,7 @@ export interface VideoFile extends TemporaryFile {
    * Represents the duration of the video, in seconds.
    */
   duration: number;
+  maxDurations: number | undefined;
+  speed: number | undefined;
+  mainTime?: number;
 }
