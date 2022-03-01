@@ -1,8 +1,7 @@
 /* eslint-disable react-native/no-unused-styles */
 import React, { useCallback, useRef } from 'react';
 import { StyleSheet, TouchableOpacity, View, ViewProps } from 'react-native';
-import type { PhotoFile } from './PhotoFile';
-import type { VideoFile, RecordVideoOptions } from './VideoFile';
+import type { RecordVideoOptions } from 'react-native-vision-camera';
 import Reanimated, {
   cancelAnimation,
   Easing,
@@ -14,7 +13,7 @@ import Reanimated, {
 } from 'react-native-reanimated';
 
 interface Props extends ViewProps {
-  onMediaCaptured: (media: PhotoFile | VideoFile, type: 'photo' | 'video') => void;
+  onMediaCaptured: (videos: [], type: 'photo' | 'video') => void;
 
   flash: 'off' | 'on';
 
@@ -79,7 +78,6 @@ const _CaptureButton: React.FC<Props> = ({
 
   //#region Tap handler
   const onPressButton = useCallback(async () => {
-    console.log('is Record: ', isRecord);
     if (!isRecord) startRecording();
     else if (isReadyToStop) await stopRecording();
   }, [isReadyToStop, isRecord, startRecording, stopRecording]);
@@ -155,7 +153,7 @@ const _CaptureButton: React.FC<Props> = ({
       borderColor: 'white',
     },
   });
-  console.log('isRecord: ', isRecord);
+
   return (
     <TouchableOpacity onPress={onPressButton} disabled={!enabled}>
       <Reanimated.View {...props} style={[buttonStyle, style]}>

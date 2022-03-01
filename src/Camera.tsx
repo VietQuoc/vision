@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
@@ -13,6 +14,9 @@ import {
   View,
   Animated,
   StyleSheet,
+  Image,
+  TouchableOpacity,
+  Text,
 } from 'react-native';
 import type { FrameProcessorPerformanceSuggestion, VideoFileType } from '.';
 import type { CameraDevice } from './CameraDevice';
@@ -24,7 +28,7 @@ import type { PhotoFile, TakePhotoOptions } from './PhotoFile';
 import type { Point } from './Point';
 import type { TakeSnapshotOptions } from './Snapshot';
 import type { CameraVideoCodec, RecordVideoOptions, VideoFile } from './VideoFile';
-import { CaptureButton } from './CaptureButton';
+import { SCREEN_WIDTH } from './Constants';
 import moment from 'moment';
 
 //#region Types
@@ -51,47 +55,16 @@ type NativeCameraViewProps = Omit<
 type RefType = React.Component<NativeCameraViewProps> & Readonly<NativeMethods>;
 //#endregion
 
-// NativeModules automatically resolves 'CameraView' to 'CameraViewModule'
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const CameraModule = NativeModules.CameraView;
 if (CameraModule == null) console.error("Camera: Native Module 'CameraView' was null! Did you run pod install?");
-
-//#region Camera Component
-/**
- * ### A powerful `<Camera>` component.
- *
- * Read the [VisionCamera documentation](https://mrousavy.github.io/react-native-vision-camera/) for more information.
- *
- * The `<Camera>` component's most important (and therefore _required_) properties are:
- *
- * * {@linkcode CameraProps.device | device}: Specifies the {@linkcode CameraDevice} to use. Get a {@linkcode CameraDevice} by using the {@linkcode useCameraDevices | useCameraDevices()} hook, or manually by using the {@linkcode Camera.getAvailableCameraDevices Camera.getAvailableCameraDevices()} function.
- * * {@linkcode CameraProps.isActive | isActive}: A boolean value that specifies whether the Camera should actively stream video frames or not. This can be compared to a Video component, where `isActive` specifies whether the video is paused or not. If you fully unmount the `<Camera>` component instead of using `isActive={false}`, the Camera will take a bit longer to start again.
- *
- * @example
- * ```tsx
- * function App() {
- *   const devices = useCameraDevices('wide-angle-camera')
- *   const device = devices.back
- *
- *   if (device == null) return <LoadingView />
- *   return (
- *     <Camera
- *       style={StyleSheet.absoluteFill}
- *       device={device}
- *       isActive={true}
- *     />
- *   )
- * }
- * ```
- *
- * @component
- */
 
 let interval: any = null;
 let totalTime = 0;
 let startTime = moment();
 let processingTime = 0;
-type MyState = { currentTime: number; currentVideoTime: number; videos: any[] };
+type MyState = { currentTime: number; currentVideoTime: number; videos: any[]; speed: number; maxDurations: number };
+const CORESPEEDS = [0.5, 1, 2, 3];
+const COREDURATIONS = [60, 30, 15];
 export class Camera extends React.PureComponent<CameraProps, MyState> {
   /** @internal */
   static displayName = 'Camera';
@@ -118,6 +91,8 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     currentVideoTime: 0,
     videos: [],
     processingAnimated: new Animated.Value(0),
+    speed: 1,
+    maxDurations: 15,
   };
 
   timer = () => {
@@ -125,12 +100,13 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       this.setState({
         currentVideoTime: 0.01,
       });
-      const timeCount = parseInt(moment.utc(moment().diff(startTime)).format('ss'), 10);
+      const timeCount = parseFloat(moment.utc(moment().diff(startTime)).format('ss.SS')) / (this.props.speed || this.state.speed);
+      console.log(timeCount);
       this.setState({
         currentTime: totalTime + timeCount,
         currentVideoTime: timeCount !== 0 ? timeCount : 0.01,
       });
-      if (totalTime + timeCount >= this.props.maxDurations) this.stopRecording(true);
+      if (totalTime + timeCount >= (this.props.maxDurations || this.state.maxDurations)) this.stopRecording(true);
     }, 100);
   };
 
@@ -146,9 +122,10 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
 
   startTimmer = () => {
     this.initTimmer();
+    const durationCount: number = (this.props.maxDurations || this.state.maxDurations) * (this.props.speed || this.state.speed);
     Animated.timing(this.state.processingAnimated, {
-      toValue: this.props.maxDurations,
-      duration: this.props.maxDurations * 1000,
+      toValue: this.props.maxDurations || this.state.maxDurations,
+      duration: durationCount * 1000,
       useNativeDriver: false,
     }).start();
     if (!interval) this.timer();
@@ -157,7 +134,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
   pauseTimmer = () => {
     processingTime = (this.state.processingAnimated as any)._value;
     Animated.timing(this.state.processingAnimated, {
-      toValue: this.props.maxDurations,
+      toValue: this.props.maxDurations || this.state.maxDurations,
       useNativeDriver: false,
     }).stop();
     this.clearTimmer();
@@ -170,8 +147,9 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
   resumeTimmer = () => {
     startTime = moment();
     Animated.timing(this.state.processingAnimated, {
-      toValue: this.props.maxDurations,
-      duration: (this.props.maxDurations - this.state.currentTime) * 1000,
+      toValue: this.props.maxDurations || this.state.maxDurations,
+      duration:
+        ((this.props.maxDurations || this.state.maxDurations) - this.state.currentTime) * (this.props.speed || this.state.speed) * 1000,
       useNativeDriver: false,
     }).start();
     if (!interval) this.timer();
@@ -196,6 +174,29 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     }
   };
 
+  deleteLastVideo = () => {
+    const videoList = [...this.state.videos];
+    const lastListVideo = videoList.slice(0, -1);
+    if (lastListVideo.length === 0) {
+      this.setState({
+        videos: lastListVideo,
+      });
+      this.stopTimmer();
+    } else {
+      const lastVideo: any = lastListVideo[lastListVideo.length - 1];
+      this.setState({
+        currentTime: lastVideo?.mainTime,
+        currentVideoTime: 0,
+        videos: lastListVideo,
+      });
+      Animated.timing(this.state.processingAnimated, {
+        toValue: lastVideo?.mainTime || 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
   /** @internal */
   componentDidMount(): void {
     if (!this.isNativeViewMounted) return;
@@ -208,6 +209,61 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       this.lastFrameProcessor = frameProcessor;
     }
   }
+
+  runderSpeedComponent = () => {
+    const speedList = this.props.SPEEDS ? this.props.SPEEDS : CORESPEEDS;
+    const { ChooseSpeedComponent } = this.props;
+    if (this.state.currentVideoTime !== 0) return null;
+    if (ChooseSpeedComponent) return <ChooseSpeedComponent />;
+    return (
+      <View style={styles.speed}>
+        <View style={styles.speedContainer}>
+          {speedList.map((item, index) => {
+            return (
+              <TouchableOpacity
+                onPress={() => this.setState({ speed: item })}
+                key={index}
+                style={[
+                  styles.textSpeedContainer,
+                  item === this.state.speed && styles.backgroundWhite,
+                  { width: SCREEN_WIDTH / (speedList.length + 1) },
+                ]}>
+                <Text style={[styles.textSpeed, item === this.state.speed && styles.colorGray]}>{`${item}`.replace('.', ',')}x</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
+  runderMaxDurationsComponent = () => {
+    const durationList = this.props.DURATIONS ? this.props.DURATIONS : COREDURATIONS;
+    const speedList = this.props.SPEEDS ? this.props.SPEEDS : CORESPEEDS;
+    const { ChooseTimeComponent } = this.props;
+    if (this.state.currentTime !== 0) return null;
+    if (ChooseTimeComponent) return <ChooseTimeComponent />;
+    return (
+      <View style={styles.duration}>
+        <View style={styles.durationContainer}>
+          {durationList.map((item, index) => {
+            return (
+              <TouchableOpacity
+                onPress={() => this.setState({ maxDurations: item })}
+                key={index}
+                style={[
+                  styles.textDurationContainer,
+                  item === this.state.maxDurations && styles.backgroundTransparent,
+                  { width: SCREEN_WIDTH / (speedList.length + 1) },
+                ]}>
+                <Text style={styles.textSpeed}>{item}s</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
 
   private get handle(): number | null {
     const nodeHandle = findNodeHandle(this.ref.current);
@@ -270,28 +326,6 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     }
   }
 
-  /**
-   * Start a new video recording.
-   *
-   * Records in the following formats:
-   * * **iOS**: QuickTime (`.mov`)
-   * * **Android**: MPEG4 (`.mp4`)
-   *
-   * @blocking This function is synchronized/blocking.
-   *
-   * @throws {@linkcode CameraCaptureError} When any kind of error occured while starting the video recording. Use the {@linkcode CameraCaptureError.code | code} property to get the actual error
-   *
-   * @example
-   * ```ts
-   * camera.current.startRecording({
-   *   onRecordingFinished: (video) => console.log(video),
-   *   onRecordingError: (error) => console.error(error),
-   * })
-   * setTimeout(() => {
-   *   camera.current.stopRecording()
-   * }, 5000)
-   * ```
-   */
   startRecording = (options: RecordVideoOptions): void => {
     const { onRecordingError, onRecordingFinished, ...passThroughOptions } = options;
     if (typeof onRecordingError !== 'function' || typeof onRecordingFinished !== 'function')
@@ -300,8 +334,8 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     const onRecordCallback = (video?: VideoFile, error?: CameraCaptureError): void => {
       const recordedVideo = {
         ...video,
-        maxDurations: this.props.maxDurations,
-        speed: this.props.speed,
+        maxDurations: this.props.maxDurations || this.state.maxDurations,
+        speed: this.props.speed || this.state.speed,
         mainTime: processingTime,
       };
       this.setState({
@@ -310,7 +344,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       if (error != null) return onRecordingError(error);
       if ([...this.state.videos, recordedVideo].length > 0 && this.state.currentTime === 0) {
         console.log('Finish: ', this.state.videos);
-        return onRecordingFinished({ ...video, maxDurations: this.props.maxDurations, speed: this.props.speed });
+        return onRecordingFinished(this.state.videos);
       }
     };
     // TODO: Use TurboModules to either make this a sync invokation, or make it async.
@@ -337,7 +371,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
    */
   stopRecording = async (end?: boolean): Promise<void> => {
     try {
-      console.log('stop');
+      console.log('stop: ', this.state.currentVideoTime);
       if (this.state.currentVideoTime >= 3) {
         const stop = await CameraModule.stopRecording(this.handle);
         if (end) this.stopTimmer();
@@ -552,8 +586,18 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
   /** @internal */
   public render(): React.ReactNode {
     // We remove the big `device` object from the props because we only need to pass `cameraId` to native.
-    const { device, frameProcessor, frameProcessorFps, captureButtonPaddingBottom, captureButtonSizeN = 50, ...props } = this.props;
-    console.log(this.state.currentVideoTime);
+    const {
+      device,
+      frameProcessor,
+      frameProcessorFps,
+      captureButtonPaddingBottom,
+      captureButtonSizeN = 50,
+      processingPaddingTop = 20,
+      CaptureButton,
+      DeleteButton,
+      ...props
+    } = this.props;
+
     return (
       <View style={props.style}>
         <NativeCameraView
@@ -567,49 +611,61 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
           onFrameProcessorPerformanceSuggestionAvailable={this.onFrameProcessorPerformanceSuggestionAvailable}
           enableFrameProcessor={frameProcessor != null}
         />
-        <View style={[styles.container, props.processBarContainerStyle]}>
-          <Animated.View
-            style={[
-              styles.animatedBar,
-              // {
-              //   width: `${(this.state.currentTime / props.maxDurations) * 100}%`,
-              // },
-              {
-                width: this.state.processingAnimated.interpolate({
-                  inputRange: [0, props.maxDurations],
-                  outputRange: ['0%', '100%'], // <-- value that larger than your content's height
-                }),
-              },
-              props.processBarAnimatedStyle,
-            ]}
-          />
-          {this.state.videos.map((item: VideoFile, index) => {
-            return (
-              <View
-                key={index}
-                style={{
-                  position: 'absolute',
-                  height: '100%',
-                  width: `${((item.mainTime || 0) / props.maxDurations) * 100}%`,
-                  borderRightWidth: 3,
-                  borderColor: 'white',
-                }}
-              />
-            );
-          })}
-        </View>
-
+        {this.state.currentTime !== 0 && (
+          <View style={[styles.processBarContainer, props.processBarContainerStyle, { top: processingPaddingTop }]}>
+            <Animated.View
+              style={[
+                styles.animatedBar,
+                {
+                  width: this.state.processingAnimated.interpolate({
+                    inputRange: [0, this.props.maxDurations || this.state.maxDurations],
+                    outputRange: ['0%', '100%'],
+                  }),
+                },
+                props.processBarAnimatedStyle,
+              ]}
+            />
+            {this.state.videos.length > 0 &&
+              this.state.videos.map((item: VideoFile, index) => {
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.processingMarker,
+                      {
+                        width: `${((item.mainTime || 0) / (this.props.maxDurations || this.state.maxDurations)) * 100}%`,
+                      },
+                    ]}
+                  />
+                );
+              })}
+          </View>
+        )}
+        {this.runderSpeedComponent()}
+        {this.runderMaxDurationsComponent()}
         <View style={[styles.captureButton, { bottom: captureButtonPaddingBottom || 50 }]}>
-          <CaptureButton
-            enabled={true}
-            flash="off"
-            isRecord={this.state.currentVideoTime !== 0}
-            onMediaCaptured={(video) => console.log('onMediaCaptured: ', video)}
-            startRecordingFunction={this.startRecording}
-            stopRecordingFunction={this.stopRecording}
-            isReadyToStop={this.state.currentVideoTime >= 3}
-            captureButtonSize={captureButtonSizeN}
-          />
+          {CaptureButton && (
+            <CaptureButton
+              enabled={true}
+              flash="off"
+              isRecord={this.state.currentVideoTime !== 0}
+              startRecordingFunction={this.startRecording}
+              stopRecordingFunction={this.stopRecording}
+              isReadyToStop={this.state.currentVideoTime >= 3}
+              captureButtonSize={captureButtonSizeN}
+            />
+          )}
+          {this.state.videos.length > 0 &&
+            this.state.currentVideoTime === 0 &&
+            (DeleteButton ? (
+              <DeleteButton onPress={() => this.deleteLastVideo()} />
+            ) : (
+              <TouchableOpacity
+                onPress={() => this.deleteLastVideo()}
+                style={[styles.deleteContainer, { right: -captureButtonSizeN + 10 }]}>
+                <Image style={styles.deleteImage} source={require('./images/backspace.png')} />
+              </TouchableOpacity>
+            ))}
         </View>
       </View>
     );
@@ -625,13 +681,12 @@ const NativeCameraView = requireNativeComponent<NativeCameraViewProps>(
 );
 
 const styles = StyleSheet.create({
-  container: {
-    width: '80%',
+  processBarContainer: {
+    width: '90%',
     height: 5,
     borderRadius: 5,
     backgroundColor: 'rgba(255,255,255,0.2)',
     position: 'absolute',
-    top: 70,
     alignSelf: 'center',
     justifyContent: 'flex-start',
   },
@@ -645,4 +700,37 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'center',
   },
+  processingMarker: {
+    position: 'absolute',
+    height: '100%',
+    borderRightWidth: 3,
+    borderColor: 'white',
+  },
+  speed: { position: 'absolute', alignSelf: 'center', bottom: 180 },
+  speedContainer: { height: 35, flexDirection: 'row', borderRadius: 5, backgroundColor: 'rgba(140, 140, 140, 0.3)' },
+  textSpeedContainer: {
+    height: '100%',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textSpeed: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  textDurationContainer: {
+    height: '100%',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  durationContainer: { height: 25, flexDirection: 'row', marginTop: 10 },
+  duration: { position: 'absolute', alignSelf: 'center', bottom: 150 },
+  backgroundWhite: { backgroundColor: 'white' },
+  colorGray: { color: 'gray' },
+  backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
+  deleteContainer: { position: 'absolute' },
+  deleteImage: { width: 55, height: 45, tintColor: 'white' },
 });

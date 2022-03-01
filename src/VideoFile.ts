@@ -31,7 +31,7 @@ export interface RecordVideoOptions {
   /**
    * Called when the recording has been successfully saved to file.
    */
-  onRecordingFinished: (video: VideoFile) => void;
+  onRecordingFinished: (data: any) => void;
   /**
    * Set the video codec to record in. Different video codecs affect video quality and video size.
    * To get a list of all available video codecs use the `getAvailableVideoCodecs()` function.

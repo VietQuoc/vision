@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { StyleProp, ViewProps } from 'react-native';
 import type { CameraDevice, CameraDeviceFormat, ColorSpace, VideoStabilizationMode } from './CameraDevice';
 import type { CameraRuntimeError } from './CameraError';
@@ -210,11 +211,42 @@ export interface CameraProps extends ViewProps {
   frameProcessorFps?: number | 'auto';
   //#endregion
 
-  maxDurations: 15 | 30 | 60;
+  /**
+   * use it if you want to custom duration selection
+   */
+  maxDurations?: 15 | 30 | 60;
   minDurations: number;
+  /**
+   * use it if you want to custom speed selection
+   */
   speed?: number;
   processBarContainerStyle?: StyleProp<ViewProps>;
   processBarAnimatedStyle?: StyleProp<ViewProps>;
   captureButtonPaddingBottom?: number;
   captureButtonSizeN?: number;
+  processingPaddingTop?: number;
+  /**
+   * use it if you want to custom Capture Button
+   */
+  CaptureButton?: React.FunctionComponent<any>;
+  /**
+   * use it if you want to custom delete
+   */
+  DeleteButton?: React.FunctionComponent<any>;
+  /**
+   * use it if you want to custom speed selection
+   */
+  ChooseSpeedComponent?: React.FunctionComponent<any>;
+  /**
+   * use it if you want to custom duration selection
+   */
+  ChooseTimeComponent?: React.FunctionComponent<any>;
+  /**
+   * use it if you want to custom speed selection
+   */
+  SPEEDS?: [number];
+  /**
+   * use it if you want to custom duration selection
+   */
+  DURATIONS?: [number];
 }

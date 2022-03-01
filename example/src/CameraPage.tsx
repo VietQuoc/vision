@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as React from 'react';
 import { useRef, useState, useMemo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -15,6 +16,7 @@ import IonIcon from 'react-native-vector-icons/Ionicons';
 import type { Routes } from './Routes';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useIsFocused } from '@react-navigation/core';
+import { CaptureButton } from './CaptureButton';
 
 const ReanimatedCamera = Reanimated.createAnimatedComponent(Camera);
 Reanimated.addWhitelistedNativeProps({
@@ -118,11 +120,11 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
     setIsCameraInitialized(true);
   }, []);
   const onMediaCaptured = useCallback(
-    (media: PhotoFile | VideoFile, type: 'photo' | 'video') => {
-      console.log(`Media captured! ${JSON.stringify(media)}`);
+    (videos: [any]) => {
+      console.log(`Media captured! ${JSON.stringify(videos)}`);
       navigation.navigate('MediaPage', {
-        path: media.path,
-        type: type,
+        path: videos[0].path,
+        type: 'video',
       });
     },
     [navigation],
@@ -198,13 +200,16 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
                 enableZoomGesture={false}
                 animatedProps={cameraAnimatedProps}
                 video={true}
+                // supportsParallelVideoProcessing={false}
                 audio={hasMicrophonePermission}
                 orientation="portrait"
-                maxDurations={15}
+                // maxDurations={videoDuration}
                 minDurations={3}
-                speed={2}
+                // speed={speed}
                 captureButtonPaddingBottom={SAFE_AREA_PADDING.paddingBottom}
                 captureButtonSizeN={CAPTURE_BUTTON_SIZE}
+                processingPaddingTop={SAFE_AREA_PADDING.processingPadding}
+                CaptureButton={(props) => <CaptureButton {...props} onMediaCaptured={(videos) => onMediaCaptured(videos)} />}
               />
             </TapGestureHandler>
           </Reanimated.View>

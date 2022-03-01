@@ -13,6 +13,7 @@ export const SAFE_AREA_PADDING = {
   paddingTop: StaticSafeAreaInsets.safeAreaInsetsTop + CONTENT_SPACING,
   paddingRight: StaticSafeAreaInsets.safeAreaInsetsRight + CONTENT_SPACING,
   paddingBottom: SAFE_BOTTOM + CONTENT_SPACING,
+  processingPadding: StaticSafeAreaInsets.safeAreaInsetsTop + 10,
 };
 
 // The maximum zoom _factor_ you should be able to zoom in
