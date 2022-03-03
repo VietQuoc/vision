@@ -110,7 +110,6 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
         currentVideoTime: 0.01,
       });
       const timeCount = parseFloat(moment.utc(moment().diff(startTime)).format('ss.SS')) / (this.props.speed || this.state.speed);
-      console.log(timeCount);
       this.setState({
         currentTime: totalTime + timeCount,
         currentVideoTime: timeCount !== 0 ? timeCount : 0.01,
@@ -360,7 +359,6 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       });
       if (error != null) return onRecordingError(error);
       if ([...this.state.videos, recordedVideo].length > 0 && this.state.currentTime === 0) {
-        console.log('Finish: ', this.state.videos);
         const listVideosFinish = [...this.state.videos];
         this.initState();
         return onRecordingFinished(listVideosFinish);
@@ -703,7 +701,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
         {TimerComponent ? (
           <TimerComponent time={this.state.currentTime} />
         ) : this.state.currentTime > 0 ? (
-          <Text style={[styles.timer, { top: processingPaddingTop + 10 }]}>{this.state.currentTime.toFixed(2)}s</Text>
+          <Text style={[styles.timer, { top: processingPaddingTop + 10 }]}>{this.state.currentTime.toFixed(0)}s</Text>
         ) : null}
       </View>
     );
@@ -771,5 +769,5 @@ const styles = StyleSheet.create({
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
   deleteImage: { width: 55, height: 45, tintColor: 'white' },
-  timer: { position: 'absolute', left: 20, color: 'white', fontSize: 13, fontWeight: 'bold' },
+  timer: { position: 'absolute', color: 'white', fontSize: 13, fontWeight: 'bold', alignSelf: 'center' },
 });
