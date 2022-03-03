@@ -1,3 +1,4 @@
+
 <h1 align="center">Vision Camera</h1>
 
 <div align="center">
@@ -34,44 +35,58 @@
 
 ### Features
 
-* Photo, Video and Snapshot capture
-* Customizable devices and multi-cameras (smoothly zoom out to "fish-eye" camera)
-* Customizable FPS
-* [Frame Processors](https://mrousavy.github.io/react-native-vision-camera/docs/guides/frame-processors) (JS worklets to run QR-Code scanning, facial recognition, AI object detection, realtime video chats, ...)
-* Smooth zooming (Reanimated)
-* Fast pause and resume
-* HDR & Night modes
+* Record Multi Video
+* Progress Bar
+* Timer
+* Delete Video
+* Record Durations
+* Record Speed
 
 > See the [example](./example/) app
 
-### Example
+### New Props
 
-```tsx
-function App() {
-  const devices = useCameraDevices('wide-angle-camera')
-  const device = devices.back
+#### maxDurations?: 15 | 30 | 60;
 
-  if (device == null) return <LoadingView />
-  return (
-    <Camera
-      style={StyleSheet.absoluteFill}
-      device={device}
-      isActive={true}
-    />
-  )
-}
-```
+#### minDurations?: number;
 
-### Adopting at scale
+#### speed?: number;
+* use it if you want to custom speed selection
 
-<a href="https://github.com/sponsors/mrousavy">
-  <img align="right" width="160" alt="This library helped you? Consider sponsoring!" src=".github/funding-octocat.svg">
-</a>
+#### processBarContainerStyle?: StyleProp<ViewProps>;
 
-VisionCamera is provided _as is_, I work on it in my free time.
+#### processBarAnimatedStyle?: StyleProp<ViewProps>;
 
-If you're integrating VisionCamera in a production app, consider [funding this project](https://github.com/sponsors/mrousavy) and <a href="mailto:me@mrousavy.com?subject=Adopting VisionCamera at scale">contact me</a> to receive premium enterprise support, help with issues, prioritize bugfixes, request features, help at integrating VisionCamera and/or Frame Processors, and more.
+#### captureButtonPaddingBottom?: number;
 
-<br />
+#### captureButtonSizeN?: number;
 
-#### 🚀 Get started by [setting up permissions](https://mrousavy.github.io/react-native-vision-camera/docs/guides/)!
+#### processingPaddingTop?: number;
+
+#### CaptureButton?: React.FunctionComponent<any>;
+* use it if you want to custom Capture Button
+
+#### DeleteButton?: React.FunctionComponent<any>;
+* use it if you want to custom delete
+
+#### ChooseSpeedComponent?: React.FunctionComponent<any>;
+* use it if you want to custom speed selection
+* 
+#### ChooseTimeComponent?: React.FunctionComponent<any>;
+* use it if you want to custom duration selection
+
+#### TimerComponent?: React.FunctionComponent<any>;
+* use it if you want to custom timmer component
+
+#### DoneButtonComponent?: React.FunctionComponent<any>;
+* use it if you want to custom done button component
+
+#### SPEEDS?: [number];
+* use it if you want to custom speed selection
+
+#### DURATIONS?: [number];
+* use it if you want to custom duration selection
+
+#### onPressDoneButton?: (arg0: any) =>  void;
+
+## Please see the example for more detail.
