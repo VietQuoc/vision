@@ -109,7 +109,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       this.setState({
         currentVideoTime: 0.01,
       });
-      const timeCount = parseFloat(moment.utc(moment().diff(startTime)).format('ss.SS')) / (this.props.speed || this.state.speed);
+      const timeCount = parseFloat(moment.utc(moment().diff(startTime)).format('mmss.SS')) / (this.props.speed || this.state.speed);
       this.setState({
         currentTime: totalTime + timeCount,
         currentVideoTime: timeCount !== 0 ? timeCount : 0.01,
