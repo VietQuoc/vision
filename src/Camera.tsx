@@ -192,6 +192,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       this.stopTimmer();
     } else {
       const lastVideo: any = lastListVideo[lastListVideo.length - 1];
+      totalTime = lastVideo?.mainTime || 0;
       this.setState({
         currentTime: lastVideo?.mainTime,
         currentVideoTime: 0,
