@@ -43,7 +43,6 @@ const _CaptureButton: React.FC<Props> = ({
   const onStoppedRecording = useCallback(() => {
     isRecording.current = false;
     cancelAnimation(recordingProgress);
-    console.log('stopped recording video!');
   }, [recordingProgress]);
   const stopRecording = useCallback(async () => {
     try {

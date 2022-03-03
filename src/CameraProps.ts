@@ -215,7 +215,7 @@ export interface CameraProps extends ViewProps {
    * use it if you want to custom duration selection
    */
   maxDurations?: 15 | 30 | 60;
-  minDurations: number;
+  minDurations?: number;
   /**
    * use it if you want to custom speed selection
    */
@@ -242,6 +242,14 @@ export interface CameraProps extends ViewProps {
    */
   ChooseTimeComponent?: React.FunctionComponent<any>;
   /**
+   * use it if you want to custom timmer component
+   */
+  TimerComponent?: React.FunctionComponent<any>;
+  /**
+   * use it if you want to custom done button component
+   */
+  DoneButtonComponent?: React.FunctionComponent<any>;
+  /**
    * use it if you want to custom speed selection
    */
   SPEEDS?: [number];
@@ -249,4 +257,6 @@ export interface CameraProps extends ViewProps {
    * use it if you want to custom duration selection
    */
   DURATIONS?: [number];
+
+  onPressDoneButton?: (arg0: any) => void;
 }

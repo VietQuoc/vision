@@ -123,7 +123,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
     (videos: [any]) => {
       console.log(`Media captured! ${JSON.stringify(videos)}`);
       navigation.navigate('MediaPage', {
-        path: videos[0].path,
+        path: videos,
         type: 'video',
       });
     },

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View, Image, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
 import Video, { LoadError, OnLoadData } from 'react-native-video';
-import { SAFE_AREA_PADDING } from './Constants';
+import { SAFE_AREA_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH } from './Constants';
 import { useIsForeground } from './hooks/useIsForeground';
 import { PressableOpacity } from 'react-native-pressable-opacity';
 import IonIcon from 'react-native-vector-icons/Ionicons';
@@ -30,6 +31,7 @@ const requestSavePermission = async (): Promise<boolean> => {
 const isVideoOnLoadEvent = (event: OnLoadData | NativeSyntheticEvent<ImageLoadEventData>): event is OnLoadData =>
   'duration' in event && 'naturalSize' in event;
 
+let currentIndex = 0;
 type Props = NativeStackScreenProps<Routes, 'MediaPage'>;
 export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const { path, type } = route.params;
@@ -38,6 +40,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const isScreenFocused = useIsFocused();
   const isVideoPaused = !isForeground || !isScreenFocused;
   const [savingState, setSavingState] = useState<'none' | 'saving' | 'saved'>('none');
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
   const onMediaLoad = useCallback((event: OnLoadData | NativeSyntheticEvent<ImageLoadEventData>) => {
     if (isVideoOnLoadEvent(event)) {
@@ -58,17 +61,19 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
 
   const onSavePressed = useCallback(async () => {
     try {
-      setSavingState('saving');
+      if (type === 'photo') {
+        setSavingState('saving');
 
-      const hasPermission = await requestSavePermission();
-      if (!hasPermission) {
-        Alert.alert('Permission denied!', 'Vision Camera does not have permission to save the media to your camera roll.');
-        return;
+        const hasPermission = await requestSavePermission();
+        if (!hasPermission) {
+          Alert.alert('Permission denied!', 'Vision Camera does not have permission to save the media to your camera roll.');
+          return;
+        }
+        await CameraRoll.save(`file://${path}`, {
+          type: type,
+        });
+        setSavingState('saved');
       }
-      await CameraRoll.save(`file://${path}`, {
-        type: type,
-      });
-      setSavingState('saved');
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       setSavingState('none');
@@ -76,7 +81,11 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
     }
   }, [path, type]);
 
-  const source = useMemo(() => ({ uri: `file://${path}` }), [path]);
+  const source = useMemo(() => {
+    console.log('currentVideoIndex: ', currentVideoIndex);
+    if (type === 'photo') return { uri: `file://${path}` };
+    else return { uri: `file://${path[currentVideoIndex]?.path}`, speed: path[currentVideoIndex]?.speed };
+  }, [type, path, currentVideoIndex]);
 
   const screenStyle = useMemo(() => ({ opacity: hasMediaLoaded ? 1 : 0 }), [hasMediaLoaded]);
 
@@ -86,24 +95,36 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
         <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" onLoadEnd={onMediaLoadEnd} onLoad={onMediaLoad} />
       )}
       {type === 'video' && (
-        <Video
-          source={source}
-          style={StyleSheet.absoluteFill}
-          paused={isVideoPaused}
-          resizeMode="cover"
-          posterResizeMode="cover"
-          allowsExternalPlayback={false}
-          automaticallyWaitsToMinimizeStalling={false}
-          disableFocus={true}
-          repeat={true}
-          useTextureView={false}
-          controls={false}
-          playWhenInactive={true}
-          ignoreSilentSwitch="ignore"
-          onReadyForDisplay={onMediaLoadEnd}
-          onLoad={onMediaLoad}
-          onError={onMediaLoadError}
-        />
+        <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
+          <Video
+            source={source}
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+            paused={isVideoPaused}
+            resizeMode="cover"
+            posterResizeMode="cover"
+            allowsExternalPlayback={false}
+            automaticallyWaitsToMinimizeStalling={false}
+            disableFocus={true}
+            repeat={true}
+            useTextureView={false}
+            controls={false}
+            playWhenInactive={true}
+            ignoreSilentSwitch="ignore"
+            onReadyForDisplay={onMediaLoadEnd}
+            onLoad={onMediaLoad}
+            onError={onMediaLoadError}
+            onEnd={() => {
+              if (currentIndex >= path.length - 1) {
+                currentIndex = 0;
+                setCurrentVideoIndex(0);
+              } else {
+                currentIndex = currentIndex + 1;
+                setCurrentVideoIndex(currentIndex);
+              }
+            }}
+            rate={source.speed}
+          />
+        </View>
       )}
 
       <PressableOpacity style={styles.closeButton} onPress={navigation.goBack}>
@@ -123,14 +144,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    width: 150,
-    height: 300,
-    bottom: 100,
-    left: 20,
+    flex: 1,
   },
   closeButton: {
     position: 'absolute',

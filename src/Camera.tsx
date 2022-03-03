@@ -94,6 +94,15 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     speed: 1,
     maxDurations: 15,
   };
+  initState = () => {
+    this.setState({
+      currentTime: 0,
+      currentVideoTime: 0,
+      videos: [],
+      speed: 1,
+      maxDurations: 15,
+    });
+  };
 
   timer = () => {
     interval = setInterval(() => {
@@ -299,6 +308,14 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     }
   }
 
+  public getCurrentVideos(): any {
+    return this.state.videos;
+  }
+
+  public stopAllTimmer() {
+    this.stopTimmer();
+  }
+
   /**
    * Take a snapshot of the current preview view.
    *
@@ -344,7 +361,9 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       if (error != null) return onRecordingError(error);
       if ([...this.state.videos, recordedVideo].length > 0 && this.state.currentTime === 0) {
         console.log('Finish: ', this.state.videos);
-        return onRecordingFinished(this.state.videos);
+        const listVideosFinish = [...this.state.videos];
+        this.initState();
+        return onRecordingFinished(listVideosFinish);
       }
     };
     // TODO: Use TurboModules to either make this a sync invokation, or make it async.
@@ -371,16 +390,20 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
    */
   stopRecording = async (end?: boolean): Promise<void> => {
     try {
-      console.log('stop: ', this.state.currentVideoTime);
-      if (this.state.currentVideoTime >= 3) {
+      if (this.state.currentVideoTime >= (this.props.minDurations || 3)) {
         const stop = await CameraModule.stopRecording(this.handle);
         if (end) this.stopTimmer();
         else this.pauseTimmer();
         return stop;
       }
     } catch (e) {
+      console.log('Stop error: ', e);
       throw tryParseNativeCameraError(e);
     }
+  };
+
+  doneRecord = () => {
+    this.stopTimmer();
   };
 
   /**
@@ -595,6 +618,9 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       processingPaddingTop = 20,
       CaptureButton,
       DeleteButton,
+      TimerComponent,
+      DoneButtonComponent,
+      onPressDoneButton,
       ...props
     } = this.props;
 
@@ -611,7 +637,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
           onFrameProcessorPerformanceSuggestionAvailable={this.onFrameProcessorPerformanceSuggestionAvailable}
           enableFrameProcessor={frameProcessor != null}
         />
-        {this.state.currentTime !== 0 && (
+        {this.state.currentTime !== 0 ? (
           <View style={[styles.processBarContainer, props.processBarContainerStyle, { top: processingPaddingTop }]}>
             <Animated.View
               style={[
@@ -640,11 +666,11 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
                 );
               })}
           </View>
-        )}
+        ) : null}
         {this.runderSpeedComponent()}
         {this.runderMaxDurationsComponent()}
         <View style={[styles.captureButton, { bottom: captureButtonPaddingBottom || 50 }]}>
-          {CaptureButton && (
+          {CaptureButton ? (
             <CaptureButton
               enabled={true}
               flash="off"
@@ -654,10 +680,9 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
               isReadyToStop={this.state.currentVideoTime >= 3}
               captureButtonSize={captureButtonSizeN}
             />
-          )}
-          {this.state.videos.length > 0 &&
-            this.state.currentVideoTime === 0 &&
-            (DeleteButton ? (
+          ) : null}
+          {this.state.videos.length > 0 && this.state.currentVideoTime === 0 ? (
+            DeleteButton ? (
               <DeleteButton onPress={() => this.deleteLastVideo()} />
             ) : (
               <TouchableOpacity
@@ -665,8 +690,21 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
                 style={[styles.deleteContainer, { right: -captureButtonSizeN + 10 }]}>
                 <Image style={styles.deleteImage} source={require('./images/backspace.png')} />
               </TouchableOpacity>
-            ))}
+            )
+          ) : null}
+          {this.state.videos.length > 0 ? (
+            DoneButtonComponent ? (
+              <DoneButtonComponent
+                onPress={() => (onPressDoneButton ? onPressDoneButton(this.state.videos) : console.log(this.state.videos))}
+              />
+            ) : null
+          ) : null}
         </View>
+        {TimerComponent ? (
+          <TimerComponent time={this.state.currentTime} />
+        ) : this.state.currentTime > 0 ? (
+          <Text style={[styles.timer, { top: processingPaddingTop + 10 }]}>{this.state.currentTime.toFixed(2)}s</Text>
+        ) : null}
       </View>
     );
   }
@@ -733,4 +771,5 @@ const styles = StyleSheet.create({
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
   deleteImage: { width: 55, height: 45, tintColor: 'white' },
+  timer: { position: 'absolute', left: 20, color: 'white', fontSize: 13, fontWeight: 'bold' },
 });
