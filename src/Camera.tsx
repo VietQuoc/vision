@@ -729,8 +729,8 @@ const styles = StyleSheet.create({
   },
   animatedBar: {
     height: '100%',
-    backgroundColor: '#00d0e7',
-    borderRadius: 3,
+    backgroundColor: '#ff4d8b',
+    borderRadius: 2,
   },
   captureButton: {
     position: 'absolute',
@@ -769,6 +769,6 @@ const styles = StyleSheet.create({
   colorGray: { color: 'gray' },
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
-  deleteImage: { width: 55, height: 45, tintColor: 'white' },
+  deleteImage: { width: 30, height: 25 },
   timer: { position: 'absolute', color: 'white', fontSize: 13, fontWeight: 'bold', alignSelf: 'center' },
 });
