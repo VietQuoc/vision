@@ -186,6 +186,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     const videoList = [...this.state.videos];
     const lastListVideo = videoList.slice(0, -1);
     if (lastListVideo.length === 0) {
+      if (this.props.onSaveNewVideo) this.props.onSaveNewVideo(lastListVideo);
       this.setState({
         videos: lastListVideo,
       });
@@ -193,6 +194,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
     } else {
       const lastVideo: any = lastListVideo[lastListVideo.length - 1];
       totalTime = lastVideo?.mainTime || 0;
+      if (this.props.onSaveNewVideo) this.props.onSaveNewVideo(lastListVideo);
       this.setState({
         currentTime: lastVideo?.mainTime,
         currentVideoTime: 0,
