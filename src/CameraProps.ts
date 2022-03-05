@@ -259,4 +259,5 @@ export interface CameraProps extends ViewProps {
   DURATIONS?: [number];
 
   onPressDoneButton?: (arg0: any) => void;
+  onSaveNewVideo?: (arg0: any) => void;
 }

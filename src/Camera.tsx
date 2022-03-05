@@ -355,11 +355,13 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
         speed: this.props.speed || this.state.speed,
         mainTime: processingTime,
       };
+      const newVideo = [...this.state.videos, recordedVideo];
+      if (this.props.onSaveNewVideo) this.props.onSaveNewVideo(newVideo);
       this.setState({
-        videos: [...this.state.videos, recordedVideo],
+        videos: newVideo,
       });
       if (error != null) return onRecordingError(error);
-      if ([...this.state.videos, recordedVideo].length > 0 && this.state.currentTime === 0) {
+      if (newVideo.length > 0 && this.state.currentTime === 0) {
         const listVideosFinish = [...this.state.videos];
         this.initState();
         return onRecordingFinished(listVideosFinish);
@@ -729,7 +731,7 @@ const styles = StyleSheet.create({
   },
   animatedBar: {
     height: '100%',
-    backgroundColor: '#ff4d8b',
+    backgroundColor: '#14AEF2',
     borderRadius: 2,
   },
   captureButton: {
@@ -769,6 +771,6 @@ const styles = StyleSheet.create({
   colorGray: { color: 'gray' },
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
-  deleteImage: { width: 30, height: 25 },
+  deleteImage: { width: 30, height: 25, tintColor: '#14AEF2' },
   timer: { position: 'absolute', color: 'white', fontSize: 13, fontWeight: 'bold', alignSelf: 'center' },
 });

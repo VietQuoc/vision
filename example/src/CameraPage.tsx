@@ -210,6 +210,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
                 captureButtonSizeN={CAPTURE_BUTTON_SIZE}
                 processingPaddingTop={SAFE_AREA_PADDING.processingPadding}
                 CaptureButton={(props) => <CaptureButton {...props} onMediaCaptured={(videos) => onMediaCaptured(videos)} />}
+                onSaveNewVideo={(newVideo) => console.log('newVideo: ', newVideo)}
               />
             </TapGestureHandler>
           </Reanimated.View>
