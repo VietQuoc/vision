@@ -773,6 +773,6 @@ const styles = StyleSheet.create({
   colorGray: { color: 'gray' },
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
-  deleteImage: { width: 30, height: 25, tintColor: '#14AEF2' },
+  deleteImage: { width: 30, height: 25 },
   timer: { position: 'absolute', color: 'white', fontSize: 13, fontWeight: 'bold', alignSelf: 'center' },
 });
