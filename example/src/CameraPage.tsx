@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useRef, useState, useMemo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent, TapGestureHandler } from 'react-native-gesture-handler';
-import { CameraDeviceFormat, CameraRuntimeError, PhotoFile, sortFormats, useCameraDevices, VideoFile } from 'react-native-vision-camera';
+import { CameraDeviceFormat, CameraRuntimeError, sortFormats, useCameraDevices } from 'react-native-vision-camera';
 import { Camera, frameRateIncluded } from 'react-native-vision-camera';
 import { CONTENT_SPACING, MAX_ZOOM_FACTOR, SAFE_AREA_PADDING, CAPTURE_BUTTON_SIZE } from './Constants';
 import Reanimated, { Extrapolate, interpolate, useAnimatedGestureHandler, useAnimatedProps, useSharedValue } from 'react-native-reanimated';
@@ -29,6 +29,7 @@ const BUTTON_SIZE = 40;
 type Props = NativeStackScreenProps<Routes, 'CameraPage'>;
 export function CameraPage({ navigation }: Props): React.ReactElement {
   const camera = useRef<Camera>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isCameraInitialized, setIsCameraInitialized] = useState(false);
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
   const zoom = useSharedValue(0);
@@ -120,7 +121,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
     setIsCameraInitialized(true);
   }, []);
   const onMediaCaptured = useCallback(
-    (videos: [any]) => {
+    (videos: [] | [any]) => {
       console.log(`Media captured! ${JSON.stringify(videos)}`);
       navigation.navigate('MediaPage', {
         path: videos,
@@ -211,6 +212,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
                 processingPaddingTop={SAFE_AREA_PADDING.processingPadding}
                 CaptureButton={(props) => <CaptureButton {...props} onMediaCaptured={(videos) => onMediaCaptured(videos)} />}
                 onSaveNewVideo={(newVideo) => console.log('newVideo: ', newVideo)}
+                onPressDoneButton={onMediaCaptured}
               />
             </TapGestureHandler>
           </Reanimated.View>

@@ -35,6 +35,7 @@ let currentIndex = 0;
 type Props = NativeStackScreenProps<Routes, 'MediaPage'>;
 export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const { path, type } = route.params;
+  console.log('PATH: ', path);
   const [hasMediaLoaded, setHasMediaLoaded] = useState(false);
   const isForeground = useIsForeground();
   const isScreenFocused = useIsFocused();
@@ -97,6 +98,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
       {type === 'video' && (
         <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
           <Video
+            key={source.uri}
             source={source}
             style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
             paused={isVideoPaused}

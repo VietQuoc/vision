@@ -627,6 +627,13 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
       ...props
     } = this.props;
 
+    const onPressDoneButtonFunction = () => {
+      if (onPressDoneButton) {
+        this.stopTimmer();
+        onPressDoneButton(this.state.videos);
+      }
+    };
+
     return (
       <View style={props.style}>
         <NativeCameraView
@@ -690,17 +697,19 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
             ) : (
               <TouchableOpacity
                 onPress={() => this.deleteLastVideo()}
-                style={[styles.deleteContainer, { right: -captureButtonSizeN + 10 }]}>
+                style={[styles.deleteContainer, { right: -captureButtonSizeN + 30 }]}>
                 <Image style={styles.deleteImage} source={require('./images/backspace.png')} />
               </TouchableOpacity>
             )
           ) : null}
-          {this.state.videos.length > 0 ? (
+          {this.state.videos.length > 0 && this.state.currentVideoTime === 0 ? (
             DoneButtonComponent ? (
-              <DoneButtonComponent
-                onPress={() => (onPressDoneButton ? onPressDoneButton(this.state.videos) : console.log(this.state.videos))}
-              />
-            ) : null
+              <DoneButtonComponent onPress={onPressDoneButtonFunction} />
+            ) : (
+              <TouchableOpacity onPress={onPressDoneButtonFunction} style={[styles.deleteContainer, { right: -captureButtonSizeN - 30 }]}>
+                <Image style={styles.doneImage} source={require('./images/vicon.png')} />
+              </TouchableOpacity>
+            )
           ) : null}
         </View>
         {TimerComponent ? (
@@ -774,5 +783,6 @@ const styles = StyleSheet.create({
   backgroundTransparent: { backgroundColor: 'rgba(140, 140, 140, 0.3)' },
   deleteContainer: { position: 'absolute' },
   deleteImage: { width: 30, height: 25 },
+  doneImage: { width: 40, height: 40 },
   timer: { position: 'absolute', color: 'white', fontSize: 13, fontWeight: 'bold', alignSelf: 'center' },
 });
