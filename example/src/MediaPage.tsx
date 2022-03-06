@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Image, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
 import Video, { LoadError, OnLoadData } from 'react-native-video';
 import { SAFE_AREA_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH } from './Constants';
@@ -31,17 +31,17 @@ const requestSavePermission = async (): Promise<boolean> => {
 const isVideoOnLoadEvent = (event: OnLoadData | NativeSyntheticEvent<ImageLoadEventData>): event is OnLoadData =>
   'duration' in event && 'naturalSize' in event;
 
-let currentIndex = 0;
 type Props = NativeStackScreenProps<Routes, 'MediaPage'>;
 export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const { path, type } = route.params;
-  console.log('PATH: ', path);
   const [hasMediaLoaded, setHasMediaLoaded] = useState(false);
   const isForeground = useIsForeground();
   const isScreenFocused = useIsFocused();
   const isVideoPaused = !isForeground || !isScreenFocused;
   const [savingState, setSavingState] = useState<'none' | 'saving' | 'saved'>('none');
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [listVideos, setListVideos] = useState(path);
+  const currentIndex = useRef(0);
 
   const onMediaLoad = useCallback((event: OnLoadData | NativeSyntheticEvent<ImageLoadEventData>) => {
     if (isVideoOnLoadEvent(event)) {
@@ -97,39 +97,47 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
       )}
       {type === 'video' && (
         <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
-          <Video
-            key={source.uri}
-            source={source}
-            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
-            paused={isVideoPaused}
-            resizeMode="cover"
-            posterResizeMode="cover"
-            allowsExternalPlayback={false}
-            automaticallyWaitsToMinimizeStalling={false}
-            disableFocus={true}
-            repeat={true}
-            useTextureView={false}
-            controls={false}
-            playWhenInactive={true}
-            ignoreSilentSwitch="ignore"
-            onReadyForDisplay={onMediaLoadEnd}
-            onLoad={onMediaLoad}
-            onError={onMediaLoadError}
-            onEnd={() => {
-              if (currentIndex >= path.length - 1) {
-                currentIndex = 0;
-                setCurrentVideoIndex(0);
-              } else {
-                currentIndex = currentIndex + 1;
-                setCurrentVideoIndex(currentIndex);
-              }
-            }}
-            rate={source.speed}
-          />
+          {listVideos.map((item: { path: React.Key | null | undefined; speed: number | undefined; }, index: number) => (
+            <Video
+              key={item.path}
+              source={{ uri: `file://${item.path}` }}
+              style={{ width: index !== currentVideoIndex ? 0 : SCREEN_WIDTH, height: index !== currentVideoIndex ? 0 : SCREEN_HEIGHT }}
+              paused={isVideoPaused || index !== currentVideoIndex}
+              // resizeMode="cover"
+              // posterResizeMode="cover"
+              allowsExternalPlayback={true}
+              automaticallyWaitsToMinimizeStalling={true}
+              disableFocus={true}
+              repeat={false}
+              useTextureView={false}
+              playInBackground={false}
+              controls={false}
+              playWhenInactive={true}
+              ignoreSilentSwitch="ignore"
+              onReadyForDisplay={onMediaLoadEnd}
+              onLoad={onMediaLoad}
+              onError={onMediaLoadError}
+              onEnd={() => {
+                if (currentIndex.current >= path.length - 1) {
+                  // currentIndex = 0;
+                  // setCurrentVideoIndex(0);
+                } else {
+                  currentIndex.current = currentIndex.current + 1;
+                  setCurrentVideoIndex(currentIndex.current);
+                }
+              }}
+              rate={item.speed}
+            />
+          ))}
         </View>
       )}
 
-      <PressableOpacity style={styles.closeButton} onPress={navigation.goBack}>
+      <PressableOpacity
+        style={styles.closeButton}
+        onPress={() => {
+          setListVideos([]);
+          navigation.goBack();
+        }}>
         <IonIcon name="close" size={35} color="white" style={styles.icon} />
       </PressableOpacity>
 

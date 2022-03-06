@@ -74,7 +74,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
       return 30;
     }
     // If nothing blocks us from using it, we default to 60 FPS.
-    return 60;
+    return 30;
   }, [device?.supportsLowLightBoost, enableHdr, enableNightMode, formats, is60Fps]);
 
   const supportsCameraFlipping = useMemo(() => devices.back != null && devices.front != null, [devices.back, devices.front]);
