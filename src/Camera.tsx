@@ -629,8 +629,9 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
 
     const onPressDoneButtonFunction = () => {
       if (onPressDoneButton) {
-        this.stopTimmer();
         onPressDoneButton(this.state.videos);
+        this.initState();
+        this.stopTimmer();
       }
     };
 
