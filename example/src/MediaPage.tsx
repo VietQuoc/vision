@@ -14,6 +14,7 @@ import type { ImageLoadEventData } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Routes } from './Routes';
 import { useIsFocused } from '@react-navigation/core';
+import { joinAllVideos } from './VideoFormater';
 
 const requestSavePermission = async (): Promise<boolean> => {
   if (Platform.OS !== 'android') return true;
@@ -34,13 +35,13 @@ const isVideoOnLoadEvent = (event: OnLoadData | NativeSyntheticEvent<ImageLoadEv
 type Props = NativeStackScreenProps<Routes, 'MediaPage'>;
 export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const { path, type } = route.params;
-  const [hasMediaLoaded, setHasMediaLoaded] = useState(false);
   const isForeground = useIsForeground();
   const isScreenFocused = useIsFocused();
   const isVideoPaused = !isForeground || !isScreenFocused;
   const [savingState, setSavingState] = useState<'none' | 'saving' | 'saved'>('none');
+  // const [currentVideoURL, setCurrentVideoURL] = useState('');
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [listVideos, setListVideos] = useState(path);
+  const [listVideos, setListVideos] = useState([]);
   const currentIndex = useRef(0);
 
   const onMediaLoad = useCallback((event: OnLoadData | NativeSyntheticEvent<ImageLoadEventData>) => {
@@ -54,7 +55,6 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
   }, []);
   const onMediaLoadEnd = useCallback(() => {
     console.log('media has loaded.');
-    setHasMediaLoaded(true);
   }, []);
   const onMediaLoadError = useCallback((error: LoadError) => {
     console.log(`failed to load media: ${JSON.stringify(error)}`);
@@ -83,24 +83,59 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
   }, [path, type]);
 
   const source = useMemo(() => {
-    console.log('currentVideoIndex: ', currentVideoIndex);
-    if (type === 'photo') return { uri: `file://${path}` };
-    else return { uri: `file://${path[currentVideoIndex]?.path}`, speed: path[currentVideoIndex]?.speed };
-  }, [type, path, currentVideoIndex]);
-
-  const screenStyle = useMemo(() => ({ opacity: hasMediaLoaded ? 1 : 0 }), [hasMediaLoaded]);
+    if (type === 'photo') {
+      return { uri: `file://${path}` };
+    } else {
+      joinAllVideos(path)
+        .then((url: any) => setListVideos(url))
+        .catch((error: any) => console.log('Error: ', error));
+      return { uri: `file://${path}` };
+    }
+  }, [path, type]);
 
   return (
-    <View style={[styles.container, screenStyle]}>
+    <View style={styles.container}>
       {type === 'photo' && (
         <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" onLoadEnd={onMediaLoadEnd} onLoad={onMediaLoad} />
       )}
-      {type === 'video' && (
-        <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
-          {listVideos.map((item: { path: React.Key | null | undefined; speed: number | undefined; }, index: number) => (
+      {/* below code used to play one concat video */}
+      {/* {type === 'video' &&
+        (currentVideoURL !== '' ? (
+          <View style={styles.videoContainer}>
             <Video
-              key={item.path}
-              source={{ uri: `file://${item.path}` }}
+              key={currentVideoURL}
+              source={{
+                uri: currentVideoURL,
+              }}
+              style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+              paused={isVideoPaused}
+              resizeMode="cover"
+              // posterResizeMode="cover"
+              allowsExternalPlayback={true}
+              automaticallyWaitsToMinimizeStalling={true}
+              disableFocus={true}
+              // repeat={true}
+              useTextureView={false}
+              playInBackground={false}
+              controls={false}
+              playWhenInactive={true}
+              ignoreSilentSwitch="ignore"
+              onReadyForDisplay={onMediaLoadEnd}
+              onLoad={onMediaLoad}
+              onError={onMediaLoadError}
+            />
+          </View>
+        ) : (
+          <View style={styles.activity}>
+            <ActivityIndicator size="large" color="white" />
+          </View>
+        ))} */}
+      <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
+        {listVideos.length > 0 ? (
+          listVideos.map((item: string, index: number) => (
+            <Video
+              key={item}
+              source={{ uri: item }}
               style={{ width: index !== currentVideoIndex ? 0 : SCREEN_WIDTH, height: index !== currentVideoIndex ? 0 : SCREEN_HEIGHT }}
               paused={isVideoPaused || index !== currentVideoIndex}
               // resizeMode="cover"
@@ -126,16 +161,17 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
                   setCurrentVideoIndex(currentIndex.current);
                 }
               }}
-              rate={item.speed}
             />
-          ))}
-        </View>
-      )}
-
+          ))
+        ) : (
+          <View style={styles.activity}>
+            <ActivityIndicator size="large" color="white" />
+          </View>
+        )}
+      </View>
       <PressableOpacity
         style={styles.closeButton}
         onPress={() => {
-          setListVideos([]);
           navigation.goBack();
         }}>
         <IonIcon name="close" size={35} color="white" style={styles.icon} />
@@ -156,6 +192,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  videoContainer: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' },
   closeButton: {
     position: 'absolute',
     top: SAFE_AREA_PADDING.paddingTop,
@@ -177,5 +214,13 @@ const styles = StyleSheet.create({
       width: 0,
     },
     textShadowRadius: 1,
+  },
+  activity: {
+    position: 'absolute',
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

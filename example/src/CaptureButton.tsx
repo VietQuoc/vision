@@ -65,6 +65,8 @@ const _CaptureButton: React.FC<Props> = ({
           onMediaCaptured(video, 'video');
           onStoppedRecording();
         },
+        fileType: 'mp4',
+        videoCodec: 'h264',
       });
       // TODO: wait until startRecording returns to actually find out if the recording has successfully started
       console.log('called startRecording()!');
