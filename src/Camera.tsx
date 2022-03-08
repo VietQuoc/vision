@@ -239,7 +239,7 @@ export class Camera extends React.PureComponent<CameraProps, MyState> {
                   item === this.state.speed && styles.backgroundWhite,
                   { width: SCREEN_WIDTH / (speedList.length + 1) },
                 ]}>
-                <Text style={[styles.textSpeed, item === this.state.speed && styles.colorGray]}>{`${item}`.replace('.', ',')}x</Text>
+                <Text style={[styles.textSpeed, item === this.state.speed && styles.colorGray]}>{item}x</Text>
               </TouchableOpacity>
             );
           })}
@@ -734,8 +734,8 @@ const NativeCameraView = requireNativeComponent<NativeCameraViewProps>(
 const styles = StyleSheet.create({
   processBarContainer: {
     width: '90%',
-    height: 5,
-    borderRadius: 5,
+    height: 3,
+    borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.2)',
     position: 'absolute',
     alignSelf: 'center',

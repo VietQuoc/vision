@@ -144,13 +144,13 @@ const _CaptureButton: React.FC<Props> = ({
       width: captureButtonSize,
       height: captureButtonSize,
       borderRadius: captureButtonSize / 2,
-      backgroundColor: '#14AEF2',
+      backgroundColor: '#e72547',
     },
     button: {
       width: captureButtonSize,
       height: captureButtonSize,
       borderRadius: captureButtonSize / 2,
-      borderWidth: captureButtonSize * 0.1,
+      borderWidth: captureButtonSize * 0.05,
       borderColor: 'white',
     },
   });
