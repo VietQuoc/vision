@@ -39,7 +39,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
   const isScreenFocused = useIsFocused();
   const isVideoPaused = !isForeground || !isScreenFocused;
   const [savingState, setSavingState] = useState<'none' | 'saving' | 'saved'>('none');
-  // const [currentVideoURL, setCurrentVideoURL] = useState('');
+  const [currentVideoURL, setCurrentVideoURL] = useState('');
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [listVideos, setListVideos] = useState([]);
   const currentIndex = useRef(0);
@@ -87,7 +87,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
       return { uri: `file://${path}` };
     } else {
       joinAllVideos(path)
-        .then((url: any) => setListVideos(url))
+        .then((url: any) => setCurrentVideoURL(url))
         .catch((error: any) => console.log('Error: ', error));
       return { uri: `file://${path}` };
     }
@@ -99,7 +99,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
         <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" onLoadEnd={onMediaLoadEnd} onLoad={onMediaLoad} />
       )}
       {/* below code used to play one concat video */}
-      {/* {type === 'video' &&
+      {type === 'video' &&
         (currentVideoURL !== '' ? (
           <View style={styles.videoContainer}>
             <Video
@@ -129,8 +129,8 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
           <View style={styles.activity}>
             <ActivityIndicator size="large" color="white" />
           </View>
-        ))} */}
-      <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
+        ))}
+      {/* <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: 'black' }}>
         {listVideos.length > 0 ? (
           listVideos.map((item: string, index: number) => (
             <Video
@@ -168,7 +168,7 @@ export function MediaPage({ navigation, route }: Props): React.ReactElement {
             <ActivityIndicator size="large" color="white" />
           </View>
         )}
-      </View>
+      </View> */}
       <PressableOpacity
         style={styles.closeButton}
         onPress={() => {

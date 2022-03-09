@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { FFmpegKit, ReturnCode, FFprobeKit } from 'ffmpeg-kit-react-native';
+import { Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 
 function getVideoDimension(video) {
@@ -156,50 +157,68 @@ function convertMP4ToTS(videoPath) {
 export function joinAllVideos(videos) {
   return new Promise((resolve, reject) => {
     // bellow code used to concat video if needed
-    // checkVideosDimension(videos.map((item) => item.path))
-    //   .then((vi) => {
-    //     const listPromise = [];
-    //     videos.forEach((element) => {
-    //       listPromise.push(formatVideoSpeed(element.path, element.speed, vi));
-    //     });
-    //     Promise.all(listPromise)
-    //       .then((listReturnData) => {
-    //         if (listReturnData.length === 1) {
-    //           resolve(listReturnData[0]);
-    //         } else {
-    //           const listTSPromise = [];
-    //           listReturnData.forEach((element) => {
-    //             listTSPromise.push(convertMP4ToTS(element));
-    //           });
-    //           Promise.all(listTSPromise)
-    //             .then((listTsReturn) => {
-    //               let command = '';
-    //               listTsReturn.map((item, index) => {
-    //                 command = command + item + (index === listTsReturn.length - 1 ? '' : '|');
-    //               });
-    //               const finalFilePath = listReturnData[0].replace('.mp4', 'final.mp4');
-    //               FFmpegKit.execute('-y -i "concat:' + command + '" -c copy -bsf:a aac_adtstoasc -preset ultrafast ' + finalFilePath).then(
-    //                 async (session2) => {
-    //                   const returnCode2 = await session2.getReturnCode();
-    //                   if (ReturnCode.isSuccess(returnCode2)) resolve(finalFilePath);
-    //                   else reject('error: ', returnCode2);
-    //                 },
-    //               );
-    //             })
-    //             .catch((error) => reject(error));
-    //         }
-    //       })
-    //       .catch((error) => reject(error));
-    //   })
-    //   .catch((e) => reject(e));
-    const listPromise = [];
-    videos.forEach((element) => {
-      listPromise.push(formatVideoSpeed(element.path, element.speed, false));
-    });
-    Promise.all(listPromise)
-      .then((listReturnData) => {
-        resolve(listReturnData);
+    checkVideosDimension(videos.map((item) => item.path))
+      .then((vi) => {
+        const listPromise = [];
+        videos.forEach((element) => {
+          listPromise.push(formatVideoSpeed(element.path, element.speed, vi));
+        });
+        Promise.all(listPromise)
+          .then((listReturnData) => {
+            if (listReturnData.length === 1) {
+              resolve(listReturnData[0]);
+            } else {
+              const listTSPromise = [];
+              listReturnData.forEach((element) => {
+                listTSPromise.push(convertMP4ToTS(element));
+              });
+              Promise.all(listTSPromise)
+                .then((listTsReturn) => {
+                  let command = '';
+                  listTsReturn.map((item, index) => {
+                    command = command + item + (index === listTsReturn.length - 1 ? '' : '|');
+                  });
+                  const finalFilePath = listReturnData[0].replace('.mp4', 'final.mp4');
+                  FFmpegKit.execute('-y -i "concat:' + command + '" -c copy -bsf:a aac_adtstoasc -preset ultrafast ' + finalFilePath).then(
+                    async (session2) => {
+                      const returnCode2 = await session2.getReturnCode();
+                      if (ReturnCode.isSuccess(returnCode2)) {
+                        if (Platform.OS === 'android') {
+                          const finalFilePath2 = listReturnData[0].replace('.mp4', 'final2.mp4');
+                          FFmpegKit.execute(
+                            '-i ' + finalFilePath + ' -map_metadata 0 -metadata:s:v rotate="270" -codec copy ' + finalFilePath2,
+                          ).then(async (session3) => {
+                            const returnCode3 = await session3.getReturnCode();
+                            if (ReturnCode.isSuccess(returnCode3)) {
+                              RNFS.unlink(finalFilePath)
+                                .then(() => console.log('FILE DELETED'))
+                                .catch((err) => console.log('FILE DELETED error: ', err.message));
+                              resolve(finalFilePath2);
+                            }
+                          });
+                        } else {
+                          resolve(finalFilePath);
+                        }
+                      } else {
+                        reject('error: ', returnCode2);
+                      }
+                    },
+                  );
+                })
+                .catch((error) => reject(error));
+            }
+          })
+          .catch((error) => reject(error));
       })
-      .catch((error) => reject(error));
+      .catch((e) => reject(e));
+    // const listPromise = [];
+    // videos.forEach((element) => {
+    //   listPromise.push(formatVideoSpeed(element.path, element.speed, false));
+    // });
+    // Promise.all(listPromise)
+    //   .then((listReturnData) => {
+    //     resolve(listReturnData);
+    //   })
+    //   .catch((error) => reject(error));
   });
 }
